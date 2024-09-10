@@ -8,7 +8,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Net;
 using System.Diagnostics;
+using System.Dynamic;
 using System.Globalization;
+using System.Linq;
 
 namespace YahooFinanceApi
 {
@@ -44,38 +46,38 @@ namespace YahooFinanceApi
                                    RowExtension.ToSplitTick,
                                    token).ConfigureAwait(false);
 
-        private static async Task<List<ITick>> GetTicksAsync<ITick>(
+        private static async Task<List<T>> GetTicksAsync<T>
+        (
             string symbol,
             DateTime? startTime,
             DateTime? endTime,
             Period period,
             ShowOption showOption,
-            Func<string[], ITick> instanceFunction,
+            Func<ExpandoObject, List<T>> converter,
             CancellationToken token
             )
+        where T : ITick
         {
-            using (var stream = await GetResponseStreamAsync(symbol, startTime, endTime, period, showOption.Name(), token).ConfigureAwait(false))
-			using (var sr = new StreamReader(stream))
-			using (var csvReader = new CsvReader(sr, Culture))
-			{
-                csvReader.Read(); // skip header
+            dynamic json = await GetResponseStreamAsync(symbol, startTime, endTime, period, showOption.Name(), token).ConfigureAwait(false);
+            dynamic data = json.chart.result[0];
+            
 
-                var ticks = new List<ITick>();
+            return converter(data);
+            
+            // List<ITick> ticks = dates.Zip<DateTime, dynamic, ITick>(values, (time, v) => instanceFunction(time, v)).ToList();
+            
+//             while (csvReader.Read())
+//             {
+//                 var tick = instanceFunction(csvReader.Context.Parser.Record);
+// #pragma warning disable RECS0017 // Possible compare of value type with 'null'
+//                 if (tick != null)
+// #pragma warning restore RECS0017 // Possible compare of value type with 'null'
+//                     ticks.Add(tick);
+//             }
+//                 
+        }
 
-                while (csvReader.Read())
-                {
-                    var tick = instanceFunction(csvReader.Context.Parser.Record);
-#pragma warning disable RECS0017 // Possible compare of value type with 'null'
-                    if (tick != null)
-#pragma warning restore RECS0017 // Possible compare of value type with 'null'
-                        ticks.Add(tick);
-                }
-
-                return ticks;
-            }
-		}
-
-        private static async Task<Stream> GetResponseStreamAsync(string symbol, DateTime? startTime, DateTime? endTime, Period period, string events, CancellationToken token)
+        private static async Task<dynamic> GetResponseStreamAsync(string symbol, DateTime? startTime, DateTime? endTime, Period period, string events, CancellationToken token)
         {
             bool reset = false;
             while (true)
@@ -101,13 +103,13 @@ namespace YahooFinanceApi
 
             #region Local Functions
 
-            Task<Stream> _GetResponseStreamAsync(CancellationToken token)
+            async Task<dynamic> _GetResponseStreamAsync(CancellationToken token)
             {
                 // Yahoo expects dates to be "Eastern Standard Time"
                 startTime = startTime?.FromEstToUtc() ?? new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
                 endTime = endTime?.FromEstToUtc() ?? DateTime.UtcNow;
 
-                var url = "https://query1.finance.yahoo.com/v7/finance/download"
+                var url = "https://query2.finance.yahoo.com/v8/finance/chart/"
                     .AppendPathSegment(symbol)
                     .SetQueryParam("period1", startTime.Value.ToUnixTimestamp())
                     .SetQueryParam("period2", endTime.Value.ToUnixTimestamp())
@@ -117,11 +119,21 @@ namespace YahooFinanceApi
 
                 Debug.WriteLine(url);
 
-                return url
+                var response = await url
                     .WithCookie(YahooSession.Cookie.Name, YahooSession.Cookie.Value)
                     .WithHeader(YahooSession.UserAgentKey, YahooSession.UserAgentValue)
-                    .GetAsync(token)
-                    .ReceiveStream();
+                    .AllowHttpStatus("500")
+                    .GetAsync(token);
+
+                var json = await response.GetJsonAsync();
+
+                var error = json.chart?.error?.description;
+                if (error != null)
+                {
+                    throw new InvalidDataException($"An error was returned by Yahoo: {error}");
+                }
+                
+                return json;
             }
 
             #endregion

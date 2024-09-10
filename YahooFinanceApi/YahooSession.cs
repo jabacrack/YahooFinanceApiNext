@@ -84,8 +84,6 @@ namespace YahooFinanceApi
                 }
                 else
                 {
-                    _cookie = response.Cookies[0];
-
                     _crumb = await "https://query1.finance.yahoo.com/v1/test/getcrumb"
                         .WithCookie(_cookie.Name, _cookie.Value)
                         .WithHeader(UserAgentKey, UserAgentValue)
