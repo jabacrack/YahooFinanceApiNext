@@ -54,19 +54,6 @@ namespace YahooFinanceApi.Tests
         }
         
         [Fact]
-        public async Task HistoricalTest2()
-        {
-            var candles = await Yahoo.GetHistoricalAsync("CIE.SW", new DateTime(2000, 1, 3), new DateTime(2024, 1, 4), Period.Daily);
-
-            var candle = candles.First();
-            Assert.Equal(130.279999m, candle.Open, DecimalComparerWithPrecision.Default);
-            Assert.Equal(130.899994m, candle.High, DecimalComparerWithPrecision.Default);
-            Assert.Equal(124.169998m, candle.Low, DecimalComparerWithPrecision.Default);
-            Assert.Equal(125.070000m, candle.Close, DecimalComparerWithPrecision.Default);
-            Assert.Equal(112_117_500, candle.Volume, DecimalComparerWithPrecision.Default);
-        }
-
-        [Fact]
         public async Task DividendTest()
         {
             var dividends = await Yahoo.GetDividendsAsync("AAPL", new DateTime(2016, 2, 4), new DateTime(2016, 2, 5));

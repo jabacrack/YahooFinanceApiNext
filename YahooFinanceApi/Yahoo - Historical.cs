@@ -60,21 +60,7 @@ namespace YahooFinanceApi
         {
             dynamic json = await GetResponseStreamAsync(symbol, startTime, endTime, period, showOption.Name(), token).ConfigureAwait(false);
             dynamic data = json.chart.result[0];
-            
-
             return converter(data);
-            
-            // List<ITick> ticks = dates.Zip<DateTime, dynamic, ITick>(values, (time, v) => instanceFunction(time, v)).ToList();
-            
-//             while (csvReader.Read())
-//             {
-//                 var tick = instanceFunction(csvReader.Context.Parser.Record);
-// #pragma warning disable RECS0017 // Possible compare of value type with 'null'
-//                 if (tick != null)
-// #pragma warning restore RECS0017 // Possible compare of value type with 'null'
-//                     ticks.Add(tick);
-//             }
-//                 
         }
 
         private static async Task<dynamic> GetResponseStreamAsync(string symbol, DateTime? startTime, DateTime? endTime, Period period, string events, CancellationToken token)

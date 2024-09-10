@@ -17,6 +17,12 @@ namespace YahooFinanceApi
         private static DateTime ToUtcFrom(this DateTime dt, TimeZoneInfo tzi) =>
             TimeZoneInfo.ConvertTimeToUtc(dt, tzi);
 
+        internal static DateTime FromUtcToEst(this DateTime dt)
+        {
+            var utc = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+            return TimeZoneInfo.ConvertTimeFromUtc(utc, TzEst);
+        }
+
         internal static DateTime FromEstToUtc(this DateTime dt) =>
             DateTime.SpecifyKind(dt, DateTimeKind.Unspecified)
                .ToUtcFrom(TzEst);

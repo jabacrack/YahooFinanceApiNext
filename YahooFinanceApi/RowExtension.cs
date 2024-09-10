@@ -10,11 +10,10 @@ namespace YahooFinanceApi
     {
         internal static bool IgnoreEmptyRows;
 
-        // internal static Candle ToCandle(DateTime date, IDictionary<string, object> row)
         internal static List<Candle> ToCandle(dynamic data)
         {
             List<object> timestamps = data.timestamp;
-            DateTime[] dates = timestamps.Select(x => DateTimeOffset.FromUnixTimeSeconds((long)x).Date).ToArray();
+            DateTime[] dates = timestamps.Select(x => x.ToDateTime().Date).ToArray();
             IDictionary<string, object> indicators = data.indicators;
             IDictionary<string, object> values = data.indicators.quote[0];
 
@@ -41,12 +40,12 @@ namespace YahooFinanceApi
                 var candle = new Candle
                 {
                     DateTime      = date,
-                    Open          = row["open"].ToDecimal(),
-                    High          = row["high"].ToDecimal(),
-                    Low           = row["low"].ToDecimal(),
-                    Close         = row["close"].ToDecimal(),
-                    AdjustedClose = row["adjclose"].ToDecimal(),
-                    Volume        = row["volume"].ToInt64()
+                    Open          = row.GetValueOrDefault("open").ToDecimal(),
+                    High          = row.GetValueOrDefault("high").ToDecimal(),
+                    Low           = row.GetValueOrDefault("low").ToDecimal(),
+                    Close         = row.GetValueOrDefault("close").ToDecimal(),
+                    AdjustedClose = row.GetValueOrDefault("adjclose").ToDecimal(),
+                    Volume        = row.GetValueOrDefault("volume").ToInt64()
                 };
 
                 if (IgnoreEmptyRows &&
@@ -66,64 +65,35 @@ namespace YahooFinanceApi
                 return new List<DividendTick>();
             
             IDictionary<string, dynamic> dvdObj = data.events.dividends;
-            var dividends = dvdObj.Values.Select(x => new DividendTick(((object) x.date).ToDateTime(), ((object) x.amount).ToDecimal())).ToList();
+            var dividends = dvdObj.Values.Select(x => new DividendTick(ToDateTime(x.date), ToDecimal(x.amount))).ToList();
 
             if (IgnoreEmptyRows)
                 dividends = dividends.Where(x => x.Dividend > 0).ToList();
 
             return dividends;
-            
-            
-            return null;
-            
-            // var tick = new DividendTick
-            // {
-            //     DateTime = date,
-            //     Dividend = row["dvd"].ToDecimal()
-            // };
-            //
-            // if (IgnoreEmptyRows && tick.Dividend == 0)
-            //     return null;
-            //
-            // return tick;
         }
 
         internal static List<SplitTick> ToSplitTick(dynamic data)
         {
             IDictionary<string, dynamic> splitsObj = data.events.splits;
-            var splits = splitsObj.Values.Select(x => new SplitTick(((object) x.date).ToDateTime(), ((object) x.numerator).ToDecimal(), ((object) x.denominator).ToDecimal())).ToList();
+            var splits = splitsObj.Values.Select(x => new SplitTick(ToDateTime(x.date), ToDecimal(x.numerator), ToDecimal(x.denominator))).ToList();
             
             if (IgnoreEmptyRows)
                 splits = splits.Where(x => x.BeforeSplit > 0 && x.AfterSplit > 0).ToList();
             
             return splits;
-            
-            // var tick = new SplitTick { DateTime = date };
-
-            //TODO
-            // var split = row[1].Split(':');
-            // if (split.Length == 2)
-            // {
-            //     tick.BeforeSplit = split[0].ToDecimal();
-            //     tick.AfterSplit  = split[1].ToDecimal();
-            // }
-            //
-            // if (IgnoreEmptyRows && tick.AfterSplit == 0 && tick.BeforeSplit == 0)
-            //     return null;
-
-            // return tick;
         }
 
-        private static DateTime ToDateTime(this object str)
+        private static DateTime ToDateTime(this object obj)
         {
-            if (str is long lng)
+            if (obj is long lng)
             {
                 return DateTimeOffset.FromUnixTimeSeconds(lng).Date;
             }
 
-            throw new Exception($"Could not convert '{str}' to DateTime.");
+            throw new Exception($"Could not convert '{obj}' to DateTime.");
         }
-
+    
         private static Decimal ToDecimal(this object obj)
         {
             return Convert.ToDecimal(obj);
