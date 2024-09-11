@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
+using Flurl.Http;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -17,12 +19,10 @@ namespace YahooFinanceApi.Tests
         [Fact]
         public async Task InvalidSymbolTest()
         {
-            var exception = await Assert.ThrowsAsync<Exception>(async () =>
+            var exception = await Assert.ThrowsAsync<FlurlHttpException>(async () =>
                 await Yahoo.GetHistoricalAsync("invalidSymbol", new DateTime(2017, 1, 3), new DateTime(2017, 1, 4)));
 
-            Write(exception.ToString());
-
-            Assert.Contains("Not Found", exception.InnerException.Message);
+            Assert.Equal((int)HttpStatusCode.NotFound, exception.StatusCode);
         }
 
         [Fact]
@@ -98,14 +98,14 @@ namespace YahooFinanceApi.Tests
         public async Task Test_UK()
         {
             var from = new DateTime(2017, 10, 10);
-            var to = new DateTime(2017, 10, 13);
+            var to = new DateTime(2017, 10, 12);
 
             var candles = await Yahoo.GetHistoricalAsync("BA.L", from, to, Period.Daily);
 
             Assert.Equal(3, candles.Count());
 
             Assert.Equal(from, candles.First().DateTime);
-            Assert.Equal(to,   candles.Last().DateTime.AddDays(1));
+            Assert.Equal(to,   candles.Last().DateTime);
 
             Assert.Equal(616.50m, candles[0].Close);
             Assert.Equal(615.00m, candles[1].Close);

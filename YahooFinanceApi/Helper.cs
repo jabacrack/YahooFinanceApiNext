@@ -8,24 +8,22 @@ namespace YahooFinanceApi
 {
     internal static class Helper
     {
-        private static readonly DateTime Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        public static readonly DateTime Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        private static readonly TimeZoneInfo TzEst = TimeZoneInfo
-            .GetSystemTimeZones()
-            .Single(tz => tz.Id == "Eastern Standard Time" || tz.Id == "America/New_York");
-
-        private static DateTime ToUtcFrom(this DateTime dt, TimeZoneInfo tzi) =>
-            TimeZoneInfo.ConvertTimeToUtc(dt, tzi);
-
-        internal static DateTime FromUtcToEst(this DateTime dt)
+        public static DateTime ToUtcFrom(this DateTime dt, TimeZoneInfo tzi)
         {
-            var utc = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
-            return TimeZoneInfo.ConvertTimeFromUtc(utc, TzEst);
+            switch (dt.Kind)
+            {
+                case DateTimeKind.Local:
+                    return TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(dt, DateTimeKind.Unspecified), tzi);
+                case DateTimeKind.Unspecified:
+                    return TimeZoneInfo.ConvertTimeToUtc(dt, tzi);
+                case DateTimeKind.Utc:
+                    return dt;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
-
-        internal static DateTime FromEstToUtc(this DateTime dt) =>
-            DateTime.SpecifyKind(dt, DateTimeKind.Unspecified)
-               .ToUtcFrom(TzEst);
 
         internal static string ToUnixTimestamp(this DateTime dt) =>
             DateTime.SpecifyKind(dt, DateTimeKind.Utc)
@@ -40,9 +38,6 @@ namespace YahooFinanceApi
                 name = attr.Value;
             return name;
         }
-
-        internal static string GetRandomString(int length) =>
-            Guid.NewGuid().ToString().Substring(0, length);
 
         internal static string ToLowerCamel(this string pascal) =>
             pascal.Substring(0, 1).ToLower() + pascal.Substring(1);

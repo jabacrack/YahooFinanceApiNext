@@ -1,19 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Dynamic;
-using System.Globalization;
 using System.Linq;
 
 namespace YahooFinanceApi
 {
-    internal static class RowExtension
+    internal static class DataConvertors
     {
         internal static bool IgnoreEmptyRows;
 
-        internal static List<Candle> ToCandle(dynamic data)
+        internal static List<Candle> ToCandle(dynamic data, TimeZoneInfo timeZone)
         {
             List<object> timestamps = data.timestamp;
-            DateTime[] dates = timestamps.Select(x => x.ToDateTime().Date).ToArray();
+            DateTime[] dates = timestamps.Select(x => x.ToDateTime(timeZone).Date).ToArray();
             IDictionary<string, object> indicators = data.indicators;
             IDictionary<string, object> values = data.indicators.quote[0];
 
@@ -57,7 +55,7 @@ namespace YahooFinanceApi
             }
         }
 
-        internal static List<DividendTick> ToDividendTick(dynamic data)
+        internal static List<DividendTick> ToDividendTick(dynamic data, TimeZoneInfo timeZone)
         {
             IDictionary<string, object> expandoObject = data;
 
@@ -65,7 +63,7 @@ namespace YahooFinanceApi
                 return new List<DividendTick>();
             
             IDictionary<string, dynamic> dvdObj = data.events.dividends;
-            var dividends = dvdObj.Values.Select(x => new DividendTick(ToDateTime(x.date), ToDecimal(x.amount))).ToList();
+            var dividends = dvdObj.Values.Select(x => new DividendTick(ToDateTime(x.date, timeZone), ToDecimal(x.amount))).ToList();
 
             if (IgnoreEmptyRows)
                 dividends = dividends.Where(x => x.Dividend > 0).ToList();
@@ -73,10 +71,10 @@ namespace YahooFinanceApi
             return dividends;
         }
 
-        internal static List<SplitTick> ToSplitTick(dynamic data)
+        internal static List<SplitTick> ToSplitTick(dynamic data, TimeZoneInfo timeZone)
         {
             IDictionary<string, dynamic> splitsObj = data.events.splits;
-            var splits = splitsObj.Values.Select(x => new SplitTick(ToDateTime(x.date), ToDecimal(x.numerator), ToDecimal(x.denominator))).ToList();
+            var splits = splitsObj.Values.Select(x => new SplitTick(ToDateTime(x.date, timeZone), ToDecimal(x.numerator), ToDecimal(x.denominator))).ToList();
             
             if (IgnoreEmptyRows)
                 splits = splits.Where(x => x.BeforeSplit > 0 && x.AfterSplit > 0).ToList();
@@ -84,11 +82,11 @@ namespace YahooFinanceApi
             return splits;
         }
 
-        private static DateTime ToDateTime(this object obj)
+        private static DateTime ToDateTime(this object obj, TimeZoneInfo timeZone)
         {
             if (obj is long lng)
             {
-                return DateTimeOffset.FromUnixTimeSeconds(lng).Date;
+                return TimeZoneInfo.ConvertTimeFromUtc(DateTimeOffset.FromUnixTimeSeconds(lng).DateTime, timeZone);
             }
 
             throw new Exception($"Could not convert '{obj}' to DateTime.");
