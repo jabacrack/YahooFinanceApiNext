@@ -68,8 +68,9 @@ public sealed partial class Yahoo
         
         dynamic json = await GetResponseStreamAsync(symbol, start, end, period, showOption.Name(), token).ConfigureAwait(false);
         dynamic data = json.chart.result[0];
+
         List<T> allData = converter(data, symbolTimeZone);
-        return allData.Where(x => x.DateTime <= endTime.Value).ToList();
+        return allData.Where(x => x != null).Where(x => x.DateTime <= endTime.Value).ToList();
     }
 
     private static async Task<dynamic> GetResponseStreamAsync(string symbol, DateTime startTime, DateTime endTime, Period period, string events, CancellationToken token)
