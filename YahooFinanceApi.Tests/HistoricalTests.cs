@@ -187,7 +187,6 @@ namespace YahooFinanceApi.Tests
             Assert.Equal(1.181488m, candles[1].Close, DecimalComparerWithPrecision.Default);
             Assert.Equal(1.186549m, candles[2].Close, DecimalComparerWithPrecision.Default);
 
-            // Note: Forex seems to return date = (requested date - 1 day)
             Assert.Equal(from, candles.First().DateTime);
             Assert.Equal(to, candles.Last().DateTime);
         }
