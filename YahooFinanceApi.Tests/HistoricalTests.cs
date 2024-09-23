@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
+using Flurl.Http;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -17,12 +19,10 @@ namespace YahooFinanceApi.Tests
         [Fact]
         public async Task InvalidSymbolTest()
         {
-            var exception = await Assert.ThrowsAsync<Exception>(async () =>
+            var exception = await Assert.ThrowsAsync<FlurlHttpException>(async () =>
                 await Yahoo.GetHistoricalAsync("invalidSymbol", new DateTime(2017, 1, 3), new DateTime(2017, 1, 4)));
 
-            Write(exception.ToString());
-
-            Assert.Contains("Not Found", exception.InnerException.Message);
+            Assert.Equal((int)HttpStatusCode.NotFound, exception.StatusCode);
         }
 
         [Fact]
@@ -31,13 +31,13 @@ namespace YahooFinanceApi.Tests
             var date = new DateTime(2023, 1, 9);
 
             var candles = await Yahoo.GetHistoricalAsync("AAPL", date, date.AddDays(1), Period.Daily);
-            Assert.Equal(130.470001m, candles.First().Open);
+            Assert.Equal(130.470001m, candles.First().Open, DecimalComparerWithPrecision.Default);
 
             candles = await Yahoo.GetHistoricalAsync("AAPL", date, date.AddDays(7), Period.Weekly);
-            Assert.Equal(130.470001m, candles.First().Open);
+            Assert.Equal(130.470001m, candles.First().Open, DecimalComparerWithPrecision.Default);
 
             candles = await Yahoo.GetHistoricalAsync("AAPL", new DateTime(2023, 1, 1), new DateTime(2023, 2, 1), Period.Monthly);
-            Assert.Equal(130.279999m, candles.First().Open);
+            Assert.Equal(130.279999m, candles.First().Open, DecimalComparerWithPrecision.Default);
         }
 
         [Fact]
@@ -46,18 +46,25 @@ namespace YahooFinanceApi.Tests
             var candles = await Yahoo.GetHistoricalAsync("AAPL", new DateTime(2023, 1, 3), new DateTime(2023, 1, 4), Period.Daily);
 
             var candle = candles.First();
-            Assert.Equal(130.279999m, candle.Open);
-            Assert.Equal(130.899994m, candle.High);
-            Assert.Equal(124.169998m, candle.Low);
-            Assert.Equal(125.070000m, candle.Close);
-            Assert.Equal(112_117_500, candle.Volume);
+            Assert.Equal(130.279999m, candle.Open, DecimalComparerWithPrecision.Default);
+            Assert.Equal(130.899994m, candle.High, DecimalComparerWithPrecision.Default);
+            Assert.Equal(124.169998m, candle.Low, DecimalComparerWithPrecision.Default);
+            Assert.Equal(125.070000m, candle.Close, DecimalComparerWithPrecision.Default);
+            Assert.Equal(112_117_500, candle.Volume, DecimalComparerWithPrecision.Default);
         }
-
+        
         [Fact]
         public async Task DividendTest()
         {
             var dividends = await Yahoo.GetDividendsAsync("AAPL", new DateTime(2016, 2, 4), new DateTime(2016, 2, 5));
-            Assert.Equal(0.130000m, dividends.First().Dividend);
+            Assert.Equal(0.130000m, dividends.First().Dividend, DecimalComparerWithPrecision.Default);
+        }
+        
+        [Fact]
+        public async Task NoDividendTest()
+        {
+            var dividends = await Yahoo.GetDividendsAsync("ADXN.SW", new DateTime(2000, 1, 1), new DateTime(2024, 09, 10));
+            Assert.Empty(dividends);
         }
 
         [Fact]
@@ -82,23 +89,23 @@ namespace YahooFinanceApi.Tests
             Assert.Equal(from, candles.First().DateTime);
             Assert.Equal(to.Date,   candles.Last().DateTime);
 
-            Assert.Equal(75.18m,     candles[0].Close);
-            Assert.Equal(74.940002m, candles[1].Close);
-            Assert.Equal(72.370003m, candles[2].Close);
+            Assert.Equal(75.18m,     candles[0].Close, DecimalComparerWithPrecision.Default);
+            Assert.Equal(74.940002m, candles[1].Close, DecimalComparerWithPrecision.Default);
+            Assert.Equal(72.370003m, candles[2].Close, DecimalComparerWithPrecision.Default);
         }
 
         [Fact]
         public async Task Test_UK()
         {
             var from = new DateTime(2017, 10, 10);
-            var to = new DateTime(2017, 10, 13);
+            var to = new DateTime(2017, 10, 12);
 
             var candles = await Yahoo.GetHistoricalAsync("BA.L", from, to, Period.Daily);
 
             Assert.Equal(3, candles.Count());
 
             Assert.Equal(from, candles.First().DateTime);
-            Assert.Equal(to,   candles.Last().DateTime.AddDays(1));
+            Assert.Equal(to,   candles.Last().DateTime);
 
             Assert.Equal(616.50m, candles[0].Close);
             Assert.Equal(615.00m, candles[1].Close);
@@ -118,9 +125,9 @@ namespace YahooFinanceApi.Tests
             Assert.Equal(from, candles.First().DateTime);
             Assert.Equal(to,   candles.Last().DateTime);
 
-            Assert.Equal(71.599998m, candles[0].Close);
-            Assert.Equal(71.599998m, candles[1].Close);
-            Assert.Equal(73.099998m, candles[2].Close);
+            Assert.Equal(71.599998m, candles[0].Close, DecimalComparerWithPrecision.Default);
+            Assert.Equal(71.599998m, candles[1].Close, DecimalComparerWithPrecision.Default);
+            Assert.Equal(73.099998m, candles[2].Close, DecimalComparerWithPrecision.Default);
         }
 
         [Theory]
@@ -141,7 +148,7 @@ namespace YahooFinanceApi.Tests
             var to = from.AddDays(2).AddHours(12);
 
             // start tasks
-            var tasks = symbols.Select(symbol => Yahoo.GetHistoricalAsync(symbol, from, to));
+            var tasks = symbols.Select(symbol => Yahoo.GetHistoricalAsync(symbol, from, to, Period.Daily));
 
             // wait for all tasks to complete
             var results = await Task.WhenAll(tasks.ToArray());
@@ -176,11 +183,10 @@ namespace YahooFinanceApi.Tests
 
             Assert.Equal(3, candles.Count());
 
-            Assert.Equal(1.174164m, candles[0].Close);
-            Assert.Equal(1.181488m, candles[1].Close);
-            Assert.Equal(1.186549m, candles[2].Close);
+            Assert.Equal(1.174164m, candles[0].Close, DecimalComparerWithPrecision.Default);
+            Assert.Equal(1.181488m, candles[1].Close, DecimalComparerWithPrecision.Default);
+            Assert.Equal(1.186549m, candles[2].Close, DecimalComparerWithPrecision.Default);
 
-            // Note: Forex seems to return date = (requested date - 1 day)
             Assert.Equal(from, candles.First().DateTime);
             Assert.Equal(to, candles.Last().DateTime);
         }
