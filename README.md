@@ -1,46 +1,28 @@
-# YahooFinanceApi
-[![build](https://github.com/lppkarl/yahoofinanceapi/workflows/build/badge.svg)](https://github.com/lppkarl/YahooFinanceApi/actions?query=workflow%3Abuild)
-[![NuGet](https://img.shields.io/nuget/v/YahooFinanceApi.svg)](https://www.nuget.org/packages/YahooFinanceApi/)
-[![NuGet](https://img.shields.io/nuget/dt/YahooFinanceApi.svg)](https://www.nuget.org/packages/YahooFinanceApi/)
+# YahooFinanceApi - Next
+
+[//]: # ([![build]&#40;https://github.com/lppkarl/yahoofinanceapi/workflows/build/badge.svg&#41;]&#40;https://github.com/lppkarl/YahooFinanceApi/actions?query=workflow%3Abuild&#41;)
+
+[//]: # ([![NuGet]&#40;https://img.shields.io/nuget/v/YahooFinanceApi.svg&#41;]&#40;https://www.nuget.org/packages/YahooFinanceApi/&#41;)
+
+[//]: # ([![NuGet]&#40;https://img.shields.io/nuget/dt/YahooFinanceApi.svg&#41;]&#40;https://www.nuget.org/packages/YahooFinanceApi/&#41;)
 [![license](https://img.shields.io/github/license/lppkarl/YahooFinanceApi.svg)](https://github.com/lppkarl/YahooFinanceApi/blob/master/LICENSE)
 
-A handy Yahoo! Finance api wrapper, based on .NET Standard 2.0
+This library is the successor to the Yahoo! Finance API wrapper: a small tool for retrieving data from Yahoo Finance, written in .NET Standard 2.0.
+
 
 ## Features
 * Get quotes
 * Get historical data
 * Get dividend data
 * Get stock split data
+* Get the portfolio of a security.
 
-## Notes
-This library is intended for personal use only, any improper use of this library is not recommended.
+[Changelog](https://github.com/jabacrack/YahooFinanceApi/blob/master/CHANGELOG.md)
 
-## Install Note
-For traditional .NET framework user, if you find a "System.Runtime.Serialization.Primitives" missing exception is thrown when using this library, you have to install the missing package manually as nuget does not auto install this reference for you (Bugged?)
 
-## Important Note (2017/11/12)
-As Yahoo has terminated their csv quote service, the depending GetAsync method is no longer usable. Please consider using QueryAsync method instead.
+## LEGAL DISCLAIMER
+YahooFinanceApi - Next is an independent open-source tool, not associated with, endorsed, or verified by Yahoo, Inc. It utilizes Yahoo's publicly available APIs and is meant strictly for personal use.
 
-## v2.2 Changes (2023/05/29) (by sergemat)
-* Changed approach for getting auth cookie
-* Added cookie authorization to all v7 APIs
-* Upgraded all Nuget packages to most recent version and updated all code to work
-* Updated tests project to .NET 6
-
-* Added QueryAsync as a replacement of the original GetAsync method
-* Added Fields for QueryAsync method
-
-## v2.1 Changes (2017/11/12) (Great thanks again to @dshe :D)
-* GetAsync method is obsoleted since Yahoo has terminated their csv quote service
-* Added QueryAsync as a replacement of the original GetAsync method
-* Added Fields for QueryAsync method
-
-## v2.0 Changes (2017/10/28) (Great thanks for PRs from @dshe :D)
-* Removed error-proned timezone support
-* All api call now reads and returns datetime in EST instead of local timezone.
-* Removed ascending, leaveZeroWhenInvalid parameter in historical api call.
-* IgnoreEmptyRows property in replacement with the original leaveZeroIfInvalid parameter.
-* Performance boost on async calls.
 
 ## Supported Platforms
 * .NET Core 2.0
@@ -49,10 +31,21 @@ As Yahoo has terminated their csv quote service, the depending GetAsync method i
 * Xamarin.Android
 * Universal Windows Platform
 
+
 ## How To Install
 You can find the package through Nuget
 
     PM> Install-Package YahooFinanceApi
+
+### Install Note
+For traditional .NET framework user, if you find a "System.Runtime.Serialization.Primitives" missing exception is thrown when using this library, you have to install the missing package manually as nuget does not auto install this reference for you (Bugged?)
+
+
+## How to Avoid ban from Yahoo
+The new API used for historical data is more restrictive than the previous one. The following simple rules allow me to request data without any issues:
+* Request only one ticker at a time.
+* Wait 1 second between requests.
+
 
 ## How To Use
 
@@ -67,19 +60,7 @@ You can find the package through Nuget
     var price = aapl[Field.RegularMarketPrice] // or, you could use aapl.RegularMarketPrice directly for typed-value
 
 ### Supported fields for stock quote
-||||||
-|--|--|--|--|--|--|
-| Language | QuoteType | QuoteSourceName | Currency | MarketState | RegularMarketPrice | 
-| RegularMarketTime | RegularMarketChange | RegularMarketOpen | RegularMarketDayHigh | RegularMarketDayLow | RegularMarketVolume |
-| ShortName | FiftyTwoWeekHighChange | FiftyTwoWeekHighChangePercent | FiftyTwoWeekLow | FiftyTwoWeekHigh | DividendDate |
-| EarningsTimestamp | EarningsTimestampStart | EarningsTimestampEnd | TrailingAnnualDividendRate | TrailingPE | TrailingAnnualDividendYield | 
-| EpsTrailingTwelveMonths | EpsForward | SharesOutstanding | BookValue | RegularMarketChangePercent | RegularMarketPreviousClose | 
-| Bid | Ask | BidSize | AskSize | MessageBoardId | FullExchangeName | 
-| LongName | FinancialCurrency | AverageDailyVolume3Month | AverageDailyVolume10Day | FiftyTwoWeekLowChange | FiftyTwoWeekLowChangePercent |
-| TwoHundredDayAverageChangePercent | MarketCap | ForwardPE | PriceToBook | SourceInterval | ExchangeTimezoneName |
-| ExchangeTimezoneShortName | Market | Exchange | ExchangeDataDelayedBy | PriceHint | FiftyDayAverage |
-| FiftyDayAverageChange | FiftyDayAverageChangePercent | TwoHundredDayAverage | TwoHundredDayAverageChange | Tradeable | GmtOffSetMilliseconds |
-| Symbol |||||
+Language, QuoteType, QuoteSourceName, Currency, MarketState, RegularMarketPrice, RegularMarketTime, RegularMarketChange, RegularMarketOpen, RegularMarketDayHigh, RegularMarketDayLow, RegularMarketVolume, ShortName, FiftyTwoWeekHighChange, FiftyTwoWeekHighChangePercent, FiftyTwoWeekLow, FiftyTwoWeekHigh, DividendDate, EarningsTimestamp, EarningsTimestampStart, EarningsTimestampEnd, TrailingAnnualDividendRate, TrailingPE, TrailingAnnualDividendYield, EpsTrailingTwelveMonths, EpsForward, SharesOutstanding, BookValue, RegularMarketChangePercent, RegularMarketPreviousClose, Bid, Ask, BidSize, AskSize, MessageBoardId, FullExchangeName, LongName, FinancialCurrency, AverageDailyVolume3Month, AverageDailyVolume10Day, FiftyTwoWeekLowChange, FiftyTwoWeekLowChangePercent, TwoHundredDayAverageChangePercent, MarketCap, ForwardPE, PriceToBook, SourceInterval, ExchangeTimezoneName, ExchangeTimezoneShortName, Market, Exchange, ExchangeDataDelayedBy, PriceHint, FiftyDayAverage, FiftyDayAverageChange, FiftyDayAverageChangePercent, TwoHundredDayAverage, TwoHundredDayAverageChange, Tradeable, GmtOffSetMilliseconds, Symbol
 
 ### Ignore invalid rows
     // Sometimes, yahoo returns broken rows for historical calls, you could decide if these invalid rows is ignored or not by the following statement
@@ -109,6 +90,7 @@ You can find the package through Nuget
     {
         Console.WriteLine($"DateTime: {s.DateTime}, AfterSplit: {s.AfterSplit}, BeforeSplit: {s.BeforeSplit}");
     }
+
 
 ### Powered by
 * [Flurl](https://github.com/tmenier/Flurl) ([@tmenier](https://github.com/tmenier)) - A simple & elegant fluent-style REST api library 
