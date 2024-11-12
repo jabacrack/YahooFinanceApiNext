@@ -1,6 +1,9 @@
 Change Log
 ===========
 
+#### v2.3.5
+* Request summary for different modules
+
 #### v2.3
 * Change the API to retrieve historical data.
 * Add support for the portfolio API.

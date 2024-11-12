@@ -35,7 +35,7 @@ YahooFinanceApi - Next is an independent open-source tool, not associated with, 
 ## How To Install
 You can find the package through Nuget
 
-    PM> Install-Package YahooFinanceApi
+    PM> Install-Package YahooFinanceApiNext
 
 ### Install Note
 For traditional .NET framework user, if you find a "System.Runtime.Serialization.Primitives" missing exception is thrown when using this library, you have to install the missing package manually as nuget does not auto install this reference for you (Bugged?)
