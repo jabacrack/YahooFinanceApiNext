@@ -1,6 +1,10 @@
 Change Log
 ===========
 
+#### v2.3.6
+* Search for security API
+* Update summary results parsing
+
 #### v2.3.5
 * Request summary for different modules
 

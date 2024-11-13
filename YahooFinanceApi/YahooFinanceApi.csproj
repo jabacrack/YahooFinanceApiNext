@@ -1,7 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
-  <PropertyGroup />
   <PropertyGroup>
-      <Title>YahooFinanceApi - Next</Title>
+    <Version>2.3.6</Version>
+  </PropertyGroup>
+
+  <!--  Nuget package settings-->
+  <PropertyGroup>
+    <Title>YahooFinanceApi - Next</Title>
     <Description>A handy Yahoo! Finance api wrapper, based on .NET standard 2.0</Description>
     <Copyright>Copyright (c) 2016-2024 Karl Wan, jabacrack</Copyright>
     <AssemblyTitle>YahooFinanceApiNext</AssemblyTitle>
@@ -11,9 +15,8 @@
     <AssemblyName>YahooFinanceApiNext</AssemblyName>
     <PackageId>YahooFinanceApiNext</PackageId>
     <PackageTags>Yahoo;Finance;Stock;Quote;Eod;Dividend;Split</PackageTags>
-    <PackageReleaseNotes>
-    </PackageReleaseNotes>
     <PackageProjectUrl>https://github.com/jabacrack/YahooFinanceApiNext</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
@@ -24,7 +27,14 @@
     <GenerateNeutralResourcesLanguageAttribute>false</GenerateNeutralResourcesLanguageAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <Version>2.3.5</Version>
+    <!-- Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <!-- Embed source files that are not tracked by the source control manager in the PDB -->
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <!-- Recommended: Embed symbols containing Source Link in the main file (exe/dll) -->
+    <!--    <DebugType>embedded</DebugType>-->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <LangVersion>latest</LangVersion>
@@ -32,21 +42,15 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
-  <PropertyGroup>
-    <!-- Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <!-- Embed source files that are not tracked by the source control manager in the PDB -->
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <!-- Recommended: Embed symbols containing Source Link in the main file (exe/dll) -->
-<!--    <DebugType>embedded</DebugType>-->
-  </PropertyGroup>
-  <PropertyGroup>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-  </PropertyGroup>
+
+  <ItemGroup>
+     <None Include="..\README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+  
   <ItemGroup>
     <EmbeddedResource Include="**\*.resx" />
   </ItemGroup>
+  
   <ItemGroup>
     <PackageReference Include="Flurl" Version="3.0.7" />
     <PackageReference Include="Flurl.Http" Version="3.2.4" />

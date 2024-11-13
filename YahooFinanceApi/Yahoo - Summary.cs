@@ -69,11 +69,19 @@ namespace YahooFinanceApi
                 IDictionary<string, dynamic> moduleResult = ((IDictionary<string, dynamic>)response.result[0])[module];
                 foreach (var pair in moduleResult)
                 {
-                    results[pair.Key.ToPascal()] = pair.Value;
+                    results[pair.Key.ToPascal()] = GetValue(pair.Value);
                 }
             }
 
             return results;
+
+            dynamic GetValue(dynamic raw)
+            {
+                if (raw is IDictionary<string, dynamic> dict && dict.TryGetValue("raw", out var value))
+                    return value;
+                
+                return raw;
+            }
         }
     }
 }
