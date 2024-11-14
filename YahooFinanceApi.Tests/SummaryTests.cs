@@ -14,4 +14,10 @@ public class SummaryTests
         
         Assert.NotNull(freeFloat);
     }
+    
+    [Fact]
+    public async Task QuerySummaryAsync_ModuleNotPresent_IgnoreMissedModule()
+    {
+        var summary = await Yahoo.QuerySummaryAsync("^SPX", default, SummaryModules.AssetProfile, SummaryModules.QuoteType);
+    }
 }

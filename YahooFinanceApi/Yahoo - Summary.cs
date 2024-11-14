@@ -66,10 +66,14 @@ namespace YahooFinanceApi
             
             foreach (var module in modules)
             {
-                IDictionary<string, dynamic> moduleResult = ((IDictionary<string, dynamic>)response.result[0])[module];
-                foreach (var pair in moduleResult)
+                IDictionary<string, dynamic> moduleResult = ((IDictionary<string, dynamic>)response.result[0]).GetValueOrDefault(module);
+                
+                if (moduleResult != null)
                 {
-                    results[pair.Key.ToPascal()] = GetValue(pair.Value);
+                    foreach (var pair in moduleResult)
+                    {
+                        results[pair.Key.ToPascal()] = GetValue(pair.Value);
+                    }
                 }
             }
 
