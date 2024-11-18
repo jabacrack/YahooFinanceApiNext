@@ -23,6 +23,7 @@ namespace YahooFinanceApi
             
             var url = $"https://query2.finance.yahoo.com/v10/finance/quoteSummary/{symbol}"
                 .SetQueryParam("modules", modulesString)
+                .SetQueryParam("formatted", false)
                 .SetQueryParam("crumb", YahooSession.Crumb);
 
             // Invalid symbols as part of a request are ignored by Yahoo.
@@ -72,7 +73,11 @@ namespace YahooFinanceApi
                 {
                     foreach (var pair in moduleResult)
                     {
-                        results[pair.Key.ToPascal()] = GetValue(pair.Value);
+                        var value = GetValue(pair.Value);
+                        if (value == null)
+                            continue;
+                        
+                        results[pair.Key.ToPascal()] = value;
                     }
                 }
             }
@@ -81,7 +86,15 @@ namespace YahooFinanceApi
 
             dynamic GetValue(dynamic raw)
             {
-                if (raw is IDictionary<string, dynamic> dict && dict.TryGetValue("raw", out var value))
+                var dict = raw as IDictionary<string, dynamic>;
+
+                if (dict == null)
+                    return raw;
+
+                if (dict.Count == 0)
+                    return null;
+                
+                if (dict.TryGetValue("raw", out var value))
                     return value;
                 
                 return raw;

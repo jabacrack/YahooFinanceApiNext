@@ -20,4 +20,11 @@ public class SummaryTests
     {
         var summary = await Yahoo.QuerySummaryAsync("^SPX", default, SummaryModules.AssetProfile, SummaryModules.QuoteType);
     }
+    
+    [Fact]
+    public async Task QuerySummaryAsync_MissedValue_ReturnNull()
+    {
+        var summary = await Yahoo.QuerySummaryAsync("NREN.SW", default, SummaryModules.DefaultKeyStatistics);
+        Assert.DoesNotContain("FloatShares", summary);
+    }
 }
