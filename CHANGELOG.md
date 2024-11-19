@@ -1,6 +1,16 @@
 Change Log
 ===========
 
+#### v2.3.8
+* All methods return an empty response if the symbol is not found.
+* Bug fixes:
+    * #9 QuerySummaryAsync return empty ExpandoObject for missed value
+    * #10 Cache.GetTimeZone throws an exception if historical data is missing
+
+#### v2.3.7
+* Bug fixes:
+  * #7 QuerySummaryAsync throw KeyNotFoundException
+
 #### v2.3.6
 * Search for security API
 * Update summary results parsing

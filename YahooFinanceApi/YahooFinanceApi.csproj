@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <PropertyGroup>
-    <Version>2.3.7</Version>
+    <Version>2.3.8</Version>
   </PropertyGroup>
 
   <!--  Nuget package settings-->
