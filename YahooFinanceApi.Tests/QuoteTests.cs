@@ -128,4 +128,11 @@ public class QuotesTest
 
         Assert.Equal(count, securities.Count);
     }
+    
+    [Fact]
+    public async Task InvalidSymbolTest()
+    {
+        IReadOnlyDictionary<string, Security> fields = await Yahoo.Symbols("invalidSymbol").Fields(Field.LongName, Field.ShortName).QueryAsync();
+        Assert.Empty(fields);
+    }
 }

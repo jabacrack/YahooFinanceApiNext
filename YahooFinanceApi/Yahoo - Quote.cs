@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -97,16 +98,9 @@ namespace YahooFinanceApi
                     .ReceiveJson()
                     .ConfigureAwait(false);
             }
-            catch (FlurlHttpException ex)
+            catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == (int)HttpStatusCode.NotFound)
             {
-                if (ex.Call.Response.StatusCode == (int)System.Net.HttpStatusCode.NotFound)
-                {
-                    return new Dictionary<string, Security>();
-                }
-                else
-                {
-                    throw;
-                }
+                return null;
             }
 
             var response = data.quoteResponse;

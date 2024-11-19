@@ -56,7 +56,10 @@ public sealed partial class Yahoo
         where T : ITick
     {
         await YahooSession.InitAsync(token);
-        TimeZoneInfo symbolTimeZone = await Cache.GetTimeZone(symbol);
+        TimeZoneInfo symbolTimeZone = await Cache.GetTimeZone(symbol, token);
+        
+        if (symbolTimeZone == null)
+            return new List<T>();
 
         startTime ??= Helper.Epoch;
         endTime ??= DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
@@ -64,6 +67,10 @@ public sealed partial class Yahoo
         DateTime end = endTime.Value.AddDays(2).ToUtcFrom(symbolTimeZone);
         
         dynamic json = await GetResponseStreamAsync(symbol, start, end, period, showOption.Name(), token).ConfigureAwait(false);
+
+        if (json == null)
+            return new List<T>();
+        
         dynamic data = json.chart.result[0];
 
         List<T> allData = converter(data, symbolTimeZone);
@@ -81,7 +88,7 @@ public sealed partial class Yahoo
             }
             catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == (int)HttpStatusCode.NotFound)
             {
-                throw new Exception($"Invalid ticker or endpoint for symbol '{symbol}'.", ex);
+                return null;
             }
             catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == (int)HttpStatusCode.Unauthorized)
             {

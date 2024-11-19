@@ -14,36 +14,56 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Flurl.Http;
 
 namespace YahooFinanceApi;
 
 public static class Cache
 {
-    private static Dictionary<string, TimeZoneInfo> timeZoneCache = new Dictionary<string, TimeZoneInfo>();
+    private static readonly Dictionary<string, TimeZoneInfo> timeZoneCache = new ();
 
-    public static async Task<TimeZoneInfo> GetTimeZone(string ticker)
+    public static async Task<TimeZoneInfo> GetTimeZone(string ticker, CancellationToken cancellationToken)
     {
-        if (timeZoneCache.TryGetValue(ticker, out var zone))
-            return zone;
+        if (timeZoneCache.TryGetValue(ticker, out var cachedTimeZone))
+            return cachedTimeZone;
 
-        var timeZone = await RequestTimeZone(ticker);
-        timeZoneCache[ticker] = timeZone;
+        await YahooSession.InitAsync(cancellationToken);
+        
+        TimeZoneInfo timeZone = await RequestTimeZone(ticker, cancellationToken);
+        if (timeZone != null)
+            timeZoneCache[ticker] = timeZone;
+        
         return timeZone;
     }
 
-    private static async Task<TimeZoneInfo> RequestTimeZone(string ticker)
+    private static async Task<TimeZoneInfo> RequestTimeZone(string ticker, CancellationToken cancellationToken)
     {
         var startTime = DateTime.Now.AddDays(-2);
         var endTime = DateTime.Now;
-        var data = await ChartDataLoader.GetResponseStreamAsync(ticker, startTime, endTime, Period.Daily, ShowOption.History.Name(), CancellationToken.None);
-        var timeZoneName = data.chart.result[0].meta.exchangeTimezoneName;
+
+        dynamic data = null;
+        
+        try
+        {
+            data = await ChartDataLoader.GetResponseStreamAsync(ticker, startTime, endTime, Period.Daily, ShowOption.History.Name(), cancellationToken).ConfigureAwait(false);
+        }
+        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == (int)HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+        
+        if (data == null)
+            return null;
+        
+        string timeZoneName = data.chart.result[0].meta.exchangeTimezoneName;
         try
         {
             return TimeZoneInfo.FindSystemTimeZoneById(timeZoneName);
         }
-        catch (TimeZoneNotFoundException e)
+        catch (TimeZoneNotFoundException)
         {
             return TimeZoneInfo.Utc;
         }

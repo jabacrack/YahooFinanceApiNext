@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Flurl.Http;
@@ -25,16 +26,9 @@ public sealed partial class Yahoo
                 .ReceiveJson()
                 .ConfigureAwait(false);
         }
-        catch (FlurlHttpException ex)
+        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == (int)HttpStatusCode.NotFound)
         {
-            if (ex.Call.Response.StatusCode == (int)System.Net.HttpStatusCode.NotFound)
-            {
-                return null;
-            }
-            else
-            {
-                throw;
-            }
+            return null;
         }
 
         IList<dynamic> quotes = data.quotes;

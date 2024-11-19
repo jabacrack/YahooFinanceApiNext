@@ -27,4 +27,11 @@ public class SummaryTests
         var summary = await Yahoo.QuerySummaryAsync("NREN.SW", default, SummaryModules.DefaultKeyStatistics);
         Assert.DoesNotContain("FloatShares", summary);
     }
+    
+    [Fact]
+    public async Task InvalidSymbolTest()
+    {
+        var summary = await Yahoo.QuerySummaryAsync("invalidSymbol", default, SummaryModules.AssetProfile);
+        Assert.Empty(summary);
+    }
 }

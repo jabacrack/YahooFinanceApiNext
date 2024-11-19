@@ -41,4 +41,11 @@ public class ProfileTests
         Assert.NotNull(aaplProfile.ShareHolderRightsRisk);
         Assert.NotNull(aaplProfile.OverallRisk);
     }
+    
+    [Fact]
+    public async Task InvalidSymbolTest()
+    {
+        var profile = await Yahoo.QueryProfileAsync("invalidSymbol");
+        Assert.Empty(profile.Fields);
+    }
 }
