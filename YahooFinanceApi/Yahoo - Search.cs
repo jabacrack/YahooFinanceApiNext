@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -42,14 +43,18 @@ public sealed partial class Yahoo
 
         SearchResult CreateSearchResult(IDictionary<string, dynamic> response)
         {
+            dynamic rawScore = response.GetValueOrDefault("score");
+            int? score = rawScore == null ? null : Convert.ToInt32(rawScore);
+
             return new SearchResult(
-                symbol: response.GetValueOrDefault(key: "symbol"),
-                exchange: response.GetValueOrDefault(key: "exchange"),
-                shortName: response.GetValueOrDefault(key: "shortname"),
-                longName: response.GetValueOrDefault(key: "longname"),
-                sector: response.GetValueOrDefault(key: "sector"),
-                industry: response.GetValueOrDefault(key: "industry"),
-                type: response.GetValueOrDefault(key: "quoteType")
+                symbol: response.GetValueOrDefault("symbol"),
+                exchange: response.GetValueOrDefault("exchange"),
+                shortName: response.GetValueOrDefault("shortname"),
+                longName: response.GetValueOrDefault("longname"),
+                sector: response.GetValueOrDefault("sector"),
+                industry: response.GetValueOrDefault("industry"),
+                type: response.GetValueOrDefault("quoteType"),
+                score: score
             );
         }
     }

@@ -19,6 +19,7 @@ public class SearchTests
         Assert.NotNull(result.Sector);
         Assert.NotNull(result.LongName);
         Assert.NotNull(result.ShortName);
+        Assert.NotNull(result.Score);
         Assert.Equal("EQUITY", result.Type);
     }
 }
