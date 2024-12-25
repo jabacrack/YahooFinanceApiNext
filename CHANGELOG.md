@@ -1,6 +1,9 @@
 Change Log
 ===========
 
+#### v2.3.9
+* Add Score to SearchAsync Results
+
 #### v2.3.8
 * All methods return an empty response if the symbol is not found.
 * Bug fixes:
