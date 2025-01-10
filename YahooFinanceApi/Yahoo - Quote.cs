@@ -77,9 +77,9 @@ namespace YahooFinanceApi
                 url = url.SetQueryParam("fields", string.Join(",", _fields.Select(s => s.ToLowerCamel())));
             }
 
-            await YahooSession.InitAsync(token);
+            await YahooSession.InitCrumb(token);
 
-            url.SetQueryParam("crumb", YahooSession.Crumb);
+            url = url.SetQueryParam("crumb", YahooSession.Crumb);
 
             // Invalid symbols as part of a request are ignored by Yahoo.
             // So the number of symbols returned may be less than requested.

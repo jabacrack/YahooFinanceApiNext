@@ -18,7 +18,7 @@ namespace YahooFinanceApi
             if (modules.Length == 0)
                 throw new ArgumentException("Select at least one module");
             
-            await YahooSession.InitAsync(token);
+            await YahooSession.InitCrumb(token);
 
             var modulesString = string.Join(",", modules);
             
