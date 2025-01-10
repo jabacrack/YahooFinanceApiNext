@@ -4,18 +4,19 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Linq;
+using System.Net;
+using Flurl;
 
 namespace YahooFinanceApi;
 
+public delegate Task<T> RequestDelegate<T>(Func<Url, Url> addAuth);
 /// <summary>
 /// Holds state for Yahoo HTTP calls
 /// </summary>
-internal static class YahooSession
+internal class YahooSession
 {
-    private static string _crumb;
-    private static FlurlCookie _cookie;
-    private static SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
-    private static Dictionary<string, TimeZoneInfo> timeZoneCache = new Dictionary<string, TimeZoneInfo>();
+    private  SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
+    private  static Dictionary<string, TimeZoneInfo> timeZoneCache = new();
         
     /// <summary>
     /// The user agent key for HTTP Header
@@ -33,13 +34,7 @@ internal static class YahooSession
     /// <value>
     /// The crumb.
     /// </value>
-    public static string Crumb
-    {
-        get
-        {
-            return _crumb;
-        }
-    }
+    public string Crumb { get; private set; }
 
     /// <summary>
     /// Gets or sets the auth cookie.
@@ -47,27 +42,23 @@ internal static class YahooSession
     /// <value>
     /// The cookie.
     /// </value>
-    public static FlurlCookie Cookie
-    {
-        get
-        {
-            return _cookie;
-        }
-    }
+    public  FlurlCookie Cookie { get; private set; }
+
+    public int AttemptCount { get; } = -1;
 
     /// <summary>
-    /// Initializes the session asynchronously.
+    /// Initializes the crumb value asynchronously.
     /// </summary>
-    /// <param name="token">The cancelation token.</param>
+    /// <param name="token">The cancellation token.</param>
     /// <exception cref="System.Exception">Failure to create client.</exception>
-    public static async Task InitAsync(CancellationToken token = default)
+    public async Task InitCrumb(CancellationToken token = default)
     {
-        if (_crumb != null)
+        if (Crumb != null)
         {
             return;
         }
 
-        await _semaphore.WaitAsync(token).ConfigureAwait(false);
+        await semaphore.WaitAsync(token).ConfigureAwait(false);
         try
         {
             var response = await "https://fc.yahoo.com"
@@ -75,24 +66,25 @@ internal static class YahooSession
                 .AllowHttpStatus("500")
                 .AllowHttpStatus("502")
                 .WithHeader(UserAgentKey, UserAgentValue)
-                .GetAsync()
+                .GetAsync(token)
                 .ConfigureAwait(false);
 
-            _cookie = response.Cookies.FirstOrDefault(c => c.Name == "A3");
+            Cookie = response.Cookies.FirstOrDefault(c => c.Name == "A3");
 
-            if (_cookie == null)
+            if (Cookie == null)
             {
                 throw new Exception("Failed to obtain Yahoo auth cookie.");
             }
             else
             {
-                _crumb = await "https://query1.finance.yahoo.com/v1/test/getcrumb"
-                    .WithCookie(_cookie.Name, _cookie.Value)
+                Crumb = await "https://query1.finance.yahoo.com/v1/test/getcrumb"
+                    .WithCookie(Cookie.Name, Cookie.Value)
                     .WithHeader(UserAgentKey, UserAgentValue)
                     .GetAsync(token)
-                    .ReceiveString();
+                    .ReceiveString()
+                    .ConfigureAwait(false);
 
-                if (string.IsNullOrEmpty(_crumb))
+                if (string.IsNullOrEmpty(Crumb))
                 {
                     throw new Exception("Failed to retrieve Yahoo crumb.");
                 }
@@ -100,7 +92,19 @@ internal static class YahooSession
         }
         finally
         {
-            _semaphore.Release();
+            semaphore.Release();
+        }
+    }
+
+    public async Task<T> DoRequest<T>(RequestDelegate<T> request)
+    {
+        try
+        {
+            await request(url => url.SetQueryParam("crumb", Crumb));
+        }
+        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == (int) HttpStatusCode.Unauthorized)
+        {
+            
         }
     }
 }

@@ -77,7 +77,7 @@ namespace YahooFinanceApi
                 url = url.SetQueryParam("fields", string.Join(",", _fields.Select(s => s.ToLowerCamel())));
             }
 
-            await YahooSession.InitAsync(token);
+            await YahooSession.InitCrumb(token);
 
             url.SetQueryParam("crumb", YahooSession.Crumb);
 
