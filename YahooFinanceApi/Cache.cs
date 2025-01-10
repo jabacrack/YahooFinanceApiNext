@@ -30,7 +30,7 @@ public static class Cache
         if (timeZoneCache.TryGetValue(ticker, out var cachedTimeZone))
             return cachedTimeZone;
 
-        await YahooSession.InitAsync(cancellationToken);
+        await YahooSession.InitCrumb(cancellationToken);
         
         TimeZoneInfo timeZone = await RequestTimeZone(ticker, cancellationToken);
         if (timeZone != null)

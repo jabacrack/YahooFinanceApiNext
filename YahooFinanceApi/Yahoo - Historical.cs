@@ -55,7 +55,7 @@ public sealed partial class Yahoo
     )
         where T : ITick
     {
-        await YahooSession.InitAsync(token);
+        await YahooSession.InitCrumb(token);
         TimeZoneInfo symbolTimeZone = await Cache.GetTimeZone(symbol, token);
         
         if (symbolTimeZone == null)
