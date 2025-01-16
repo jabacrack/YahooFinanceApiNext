@@ -13,6 +13,7 @@
 // This code is derived from yfinance (https://github.com/ranaroussi/yfinance)
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading;
@@ -23,23 +24,23 @@ namespace YahooFinanceApi;
 
 public static class Cache
 {
-    private static readonly Dictionary<string, TimeZoneInfo> timeZoneCache = new ();
+    private static readonly ConcurrentDictionary<string, TimeZoneInfo> timeZoneCache = new ();
 
-    public static async Task<TimeZoneInfo> GetTimeZone(string ticker, CancellationToken cancellationToken)
+    public static async Task<TimeZoneInfo> GetTimeZone(this YahooSession session, string ticker, CancellationToken cancellationToken)
     {
         if (timeZoneCache.TryGetValue(ticker, out var cachedTimeZone))
             return cachedTimeZone;
 
-        await YahooSession.InitCrumb(cancellationToken);
+        timeZoneCache.()
         
-        TimeZoneInfo timeZone = await RequestTimeZone(ticker, cancellationToken);
+        TimeZoneInfo timeZone = await session.RequestTimeZone(ticker, cancellationToken).ConfigureAwait(false);
         if (timeZone != null)
             timeZoneCache[ticker] = timeZone;
         
         return timeZone;
     }
 
-    private static async Task<TimeZoneInfo> RequestTimeZone(string ticker, CancellationToken cancellationToken)
+    private static async Task<TimeZoneInfo> RequestTimeZone(this YahooSession session, string ticker, CancellationToken cancellationToken)
     {
         var startTime = DateTime.Now.AddDays(-2);
         var endTime = DateTime.Now;
@@ -48,7 +49,7 @@ public static class Cache
         
         try
         {
-            data = await ChartDataLoader.GetResponseStreamAsync(ticker, startTime, endTime, Period.Daily, ShowOption.History.Name(), cancellationToken).ConfigureAwait(false);
+            data = await session.GetChartDataAsync(ticker, startTime, endTime, Period.Daily, ShowOption.History.Name(), cancellationToken).ConfigureAwait(false);
         }
         catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == (int)HttpStatusCode.NotFound)
         {
