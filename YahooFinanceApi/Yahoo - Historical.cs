@@ -84,7 +84,7 @@ public sealed partial class Yahoo
         {
             try
             {
-                return await ChartDataLoader.GetResponseStreamAsync(symbol, startTime, endTime, period, events, token).ConfigureAwait(false);
+                return await ChartDataLoader.GetChartDataAsync(symbol, startTime, endTime, period, events, token).ConfigureAwait(false);
             }
             catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == (int)HttpStatusCode.NotFound)
             {

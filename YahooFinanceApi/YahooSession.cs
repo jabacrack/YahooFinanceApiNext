@@ -9,11 +9,11 @@ using Flurl;
 
 namespace YahooFinanceApi;
 
-public delegate Task<T> RequestDelegate<T>(Func<Url, Url> addAuth);
+public delegate Task<T> RequestDelegate<T>(Func<Url, IFlurlRequest> addAuth, CancellationToken cancellationToken);
 /// <summary>
 /// Holds state for Yahoo HTTP calls
 /// </summary>
-internal class YahooSession
+public class YahooSession
 {
     private  SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
     private  static Dictionary<string, TimeZoneInfo> timeZoneCache = new();
@@ -45,6 +45,7 @@ internal class YahooSession
     public  FlurlCookie Cookie { get; private set; }
 
     public int AttemptCount { get; } = -1;
+    public TimeSpan DelayBetweenAttempts { get; } = TimeSpan.FromSeconds(1);
 
     /// <summary>
     /// Initializes the crumb value asynchronously.
@@ -96,15 +97,46 @@ internal class YahooSession
         }
     }
 
-    public async Task<T> DoRequest<T>(RequestDelegate<T> request)
+    public async Task<T> DoRequest<T>(RequestDelegate<T> request, CancellationToken cancellationToken)
     {
-        try
+        var currentAttempt = AttemptCount;
+
+        if (Crumb == null)
+            await InitCrumb(cancellationToken);
+        
+        while (true)
         {
-            await request(url => url.SetQueryParam("crumb", Crumb));
-        }
-        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == (int) HttpStatusCode.Unauthorized)
-        {
+            cancellationToken.ThrowIfCancellationRequested();
             
+            try
+            {
+                await request(url => url
+                    .SetQueryParam("crumb", Crumb).WithCookie(Cookie.Name, Cookie.Value).WithHeader(UserAgentKey, UserAgentValue),
+                    cancellationToken
+                    );
+            }
+            catch (FlurlHttpException e) when (e.Call.Response?.StatusCode == (int) HttpStatusCode.Unauthorized)
+            {
+                if (AttemptCount < 0)
+                {
+                    await Task.Delay(DelayBetweenAttempts, cancellationToken);
+                    await InitCrumb(cancellationToken);
+                    continue;
+                }
+
+                if (currentAttempt > 0)
+                {
+                    currentAttempt--;
+                    await Task.Delay(DelayBetweenAttempts, cancellationToken);
+                    await InitCrumb(cancellationToken);
+                    continue;
+                }
+
+                throw;
+            }    
         }
+        
+        
+        
     }
 }

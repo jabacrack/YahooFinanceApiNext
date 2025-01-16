@@ -24,24 +24,22 @@ namespace YahooFinanceApi;
 
 public static class ChartDataLoader
 {
-    public static async Task<dynamic> GetResponseStreamAsync(string symbol, DateTime startTime, DateTime endTime, Period period, string events, CancellationToken token)
+    public static async Task<dynamic> GetChartDataAsync(this YahooSession session, string symbol, DateTime startTime, DateTime endTime, Period period, string events, CancellationToken cancellationToken)
+    {
+        return await session.DoRequest((addAuth, token) => GetResponseStreamAsync(addAuth, symbol, startTime, endTime, period, events, token), cancellationToken).ConfigureAwait(false);
+    }
+    
+    private static async Task<dynamic> GetResponseStreamAsync(Func<Url, IFlurlRequest> addAuth, string symbol, DateTime startTime, DateTime endTime, Period period, string events, CancellationToken token)
     {
         var url = "https://query2.finance.yahoo.com/v8/finance/chart/"
             .AppendPathSegment(symbol)
             .SetQueryParam("period1", startTime.ToUnixTimestamp())
             .SetQueryParam("period2", endTime.ToUnixTimestamp())
             .SetQueryParam("interval", $"1{period.Name()}")
-            .SetQueryParam("events", events)
-            .SetQueryParam("crumb", YahooSession.Crumb);
+            .SetQueryParam("events", events);
 
-        Debug.WriteLine(url);
-
-        var response = await url
-            .WithCookie(YahooSession.Cookie.Name, YahooSession.Cookie.Value)
-            .WithHeader(YahooSession.UserAgentKey, YahooSession.UserAgentValue)
-            .GetAsync(token);
-
-        var json = await response.GetJsonAsync();
+        var response = await addAuth(url).GetAsync(token).ConfigureAwait(false);
+        var json = await response.GetJsonAsync().ConfigureAwait(false);
 
         var error = json.chart?.error?.description;
         if (error != null)
