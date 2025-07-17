@@ -186,6 +186,13 @@ namespace YahooFinanceApi.Tests
             Assert.Equal(from, candles.First().DateTime);
             Assert.Equal(to, candles.Last().DateTime);
         }
-        
+
+        // https://github.com/jabacrack/YahooFinanceApiNext/issues/13
+        [Fact]
+        public async Task Issue13()
+        {
+            var symbol = "BF.B";
+            var histories = await Yahoo.GetHistoricalAsync(symbol, DateTime.Today.AddYears(-15), DateTime.Today, Period.Daily);
+        }
     }
 }

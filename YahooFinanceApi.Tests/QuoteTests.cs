@@ -60,7 +60,7 @@ public class QuotesTest
         securities = await Yahoo.Symbols("invalidsymbol").QueryAsync();
         Assert.Empty(securities);
 
-        securities = await Yahoo.Symbols("C", "invalidsymbol", "X").QueryAsync();
+        securities = await Yahoo.Symbols("C", "invalidsymbol", "MSFT").QueryAsync();
         Assert.Equal(2, securities.Count);
     }
 

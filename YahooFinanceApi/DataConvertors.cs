@@ -10,6 +10,9 @@ namespace YahooFinanceApi
 
         internal static List<Candle> ToCandle(dynamic data, TimeZoneInfo timeZone)
         {
+            if (((IDictionary<string, dynamic>) data).ContainsKey("timestamp") == false)
+                return new List<Candle>();
+
             List<object> timestamps = data.timestamp;
             DateTime[] dates = timestamps.Select(x => x.ToDateTime(timeZone).Date).ToArray();
             IDictionary<string, object> indicators = data.indicators;
