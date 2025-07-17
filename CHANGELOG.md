@@ -1,6 +1,10 @@
 Change Log
 ===========
 
+#### v2.3.10
+* Bug fixes:
+  * #13 Incorrect processing of symbols with missing data
+
 #### v2.3.9
 * Add Score to SearchAsync Results
 
