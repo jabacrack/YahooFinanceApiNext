@@ -79,25 +79,6 @@ public sealed partial class Yahoo
 
     private static async Task<dynamic> GetResponseStreamAsync(string symbol, DateTime startTime, DateTime endTime, Period period, string events, CancellationToken token)
     {
-        bool reset = false;
-        while (true)
-        {
-            try
-            {
-                return await ChartDataLoader.GetResponseStreamAsync(symbol, startTime, endTime, period, events, token).ConfigureAwait(false);
-            }
-            catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == (int)HttpStatusCode.NotFound)
-            {
-                return null;
-            }
-            catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == (int)HttpStatusCode.Unauthorized)
-            {
-                Debug.WriteLine("GetResponseStreamAsync: Unauthorized.");
-
-                if (reset)
-                    throw;
-                reset = true; // try again with a new client
-            }
-        }
+        return await GetResponseStreamAsync(() => ChartDataLoader.GetResponseStreamAsync(symbol, startTime, endTime, period, events, token));
     }
 }
