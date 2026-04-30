@@ -1,6 +1,9 @@
 Change Log
 ===========
 
+#### v2.3.11
+* Get annual and quarterly financial data
+
 #### v2.3.10
 * Bug fixes:
   * #13 Incorrect processing of symbols with missing data

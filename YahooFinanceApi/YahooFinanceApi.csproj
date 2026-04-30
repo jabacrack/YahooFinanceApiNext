@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <PropertyGroup>
-    <Version>2.3.10</Version>
+    <Version>2.3.11</Version>
   </PropertyGroup>
 
   <!--  Nuget package settings-->
   <PropertyGroup>
     <Title>YahooFinanceApi - Next</Title>
     <Description>A handy Yahoo! Finance api wrapper, based on .NET standard 2.0</Description>
-    <Copyright>Copyright (c) 2016-2024 Karl Wan, jabacrack</Copyright>
+    <Copyright>Copyright (c) 2016-2026 Karl Wan, jabacrack</Copyright>
     <AssemblyTitle>YahooFinanceApiNext</AssemblyTitle>
     <LangVersion>latest</LangVersion>
     <Authors>Karl Wan,jabacrack</Authors>

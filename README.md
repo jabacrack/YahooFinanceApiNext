@@ -91,6 +91,14 @@ Language, QuoteType, QuoteSourceName, Currency, MarketState, RegularMarketPrice,
         Console.WriteLine($"DateTime: {s.DateTime}, AfterSplit: {s.AfterSplit}, BeforeSplit: {s.BeforeSplit}");
     }
 
+### Get financial data for stock
+    var data = await Yahoo.QueryFinancialTableAsync("AAPL", FinancialTable.Income, FinancialFrequency.Quarterly);
+    foreach (var pair in data)
+    {
+    var points = pair.Value.Select(x => $"{x.Date:yyyy-MM-dd}:{x.Value}");
+    Console.WriteLine($"{pair.Key}: {string.Join(", ", points)}");
+    }
+
 
 ### Powered by
 * [Flurl](https://github.com/tmenier/Flurl) ([@tmenier](https://github.com/tmenier)) - A simple & elegant fluent-style REST api library 
