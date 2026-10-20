@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Dynamic;
 using System.Globalization;
 using System.Linq;
+using YahooFinanceApi.Utils;
 
 namespace YahooFinanceApi;
 
@@ -55,7 +56,7 @@ public sealed partial class Yahoo
     )
         where T : ITick
     {
-        await YahooSession.InitCrumb(token);
+        await YahooSession.UpdateCrumb(token);
         TimeZoneInfo symbolTimeZone = await Cache.GetTimeZone(symbol, token);
         
         if (symbolTimeZone == null)

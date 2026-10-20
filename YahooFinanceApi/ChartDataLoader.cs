@@ -19,6 +19,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Flurl;
 using Flurl.Http;
+using YahooFinanceApi.Utils;
 
 namespace YahooFinanceApi;
 

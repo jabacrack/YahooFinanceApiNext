@@ -7,18 +7,19 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using YahooFinanceApi.Utils;
 
 namespace YahooFinanceApi
 {
     public sealed partial class Yahoo
     {
 
-        public static async Task<IReadOnlyDictionary<string, dynamic>> QuerySummaryAsync(string symbol, CancellationToken token = default, params string[] modules)
+        public static async Task<IReadOnlyDictionary<string, dynamic>> QuerySummaryAsync(this YahooSession session, string symbol, CancellationToken token = default, params string[] modules)
         {
             if (modules.Length == 0)
                 throw new ArgumentException("Select at least one module");
             
-            await YahooSession.InitCrumb(token);
+            await YahooSession.UpdateCrumb(token);
 
             var modulesString = string.Join(",", modules);
             

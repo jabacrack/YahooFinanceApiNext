@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using YahooFinanceApi.Utils;
 
 namespace YahooFinanceApi
 {
@@ -77,7 +78,7 @@ namespace YahooFinanceApi
                 url = url.SetQueryParam("fields", string.Join(",", _fields.Select(s => s.ToLowerCamel())));
             }
 
-            await YahooSession.InitCrumb(token);
+            await YahooSession.UpdateCrumb(token);
 
             url = url.SetQueryParam("crumb", YahooSession.Crumb);
 

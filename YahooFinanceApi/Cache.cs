@@ -19,6 +19,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Flurl.Http;
+using YahooFinanceApi.Utils;
 
 namespace YahooFinanceApi;
 
@@ -31,8 +32,6 @@ public static class Cache
         if (timeZoneCache.TryGetValue(ticker, out var cachedTimeZone))
             return cachedTimeZone;
 
-        timeZoneCache.()
-        
         TimeZoneInfo timeZone = await session.RequestTimeZone(ticker, cancellationToken).ConfigureAwait(false);
         if (timeZone != null)
             timeZoneCache[ticker] = timeZone;
