@@ -11,21 +11,15 @@ public class RateLimiter : IDisposable
     public TimeSpan Delay { get; private set; }
     private readonly ConcurrencyLimiter limiter;
 
-    public RateLimiter()
+    public RateLimiter(): this(1, TimeSpan.FromSeconds(1))
     {
-        Concurrency = 1;
-        Delay = TimeSpan.FromSeconds(1);
-
-        limiter = new ConcurrencyLimiter(new ConcurrencyLimiterOptions
-        {
-            PermitLimit = Concurrency,
-            QueueLimit = 1000,
-            QueueProcessingOrder = QueueProcessingOrder.OldestFirst
-        });
     }
 
     public RateLimiter(int concurrency, TimeSpan delay)
     {
+        if (delay < TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(delay));
+
         this.Concurrency = concurrency;
         this.Delay = delay;
 
@@ -37,7 +31,7 @@ public class RateLimiter : IDisposable
         });
     }
 
-    public async Task<T> ExecuteAsync<T>(Func<Task<T>> action, CancellationToken cancellationToken = default)
+    public async Task<T> ExecuteAsync<T>(Func<CancellationToken, Task<T>> action, CancellationToken cancellationToken = default)
     {
         using var lease = await limiter.AcquireAsync(1, cancellationToken);
 
@@ -46,7 +40,7 @@ public class RateLimiter : IDisposable
 
         try
         {
-            return await action();
+            return await action(cancellationToken);
         }
         finally
         {
@@ -56,6 +50,37 @@ public class RateLimiter : IDisposable
         }
     }
 
+    public async Task<T> ExecuteAsync<T>(Func<CancellationToken, Task<T>> action, CancellationToken cancellationToken = default)
+    {
+        using var lease = await limiter.AcquireAsync(1, cancellationToken).ConfigureAwait(false);
+
+        if (!lease.IsAcquired)
+            throw new InvalidOperationException("Rate limit exceeded.");
+
+        return await action(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="request"></param>
+    /// <param name="cancellationToken"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    internal async Task<T> SendAsync<T>(Func<CancellationToken, Task<T>> request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await request(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            // ReSharper disable once MethodSupportsCancellation
+            // delay should be applied in any case
+            await Task.Delay(Delay).ConfigureAwait(false);
+        }
+    }
+    
     public void Dispose()
     {
         limiter.Dispose();

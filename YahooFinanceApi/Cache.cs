@@ -23,9 +23,9 @@ using YahooFinanceApi.Utils;
 
 namespace YahooFinanceApi;
 
-public static class Cache
+internal static class Cache
 {
-    private static readonly ConcurrentDictionary<string, TimeZoneInfo> timeZoneCache = new ();
+    private static readonly ConcurrentDictionary<string, TimeZoneInfo> timeZoneCache = new();
 
     public static async Task<TimeZoneInfo> GetTimeZone(this YahooSession session, string ticker, CancellationToken cancellationToken)
     {
@@ -35,7 +35,7 @@ public static class Cache
         TimeZoneInfo timeZone = await session.RequestTimeZone(ticker, cancellationToken).ConfigureAwait(false);
         if (timeZone != null)
             timeZoneCache[ticker] = timeZone;
-        
+
         return timeZone;
     }
 
@@ -45,19 +45,20 @@ public static class Cache
         var endTime = DateTime.Now;
 
         dynamic data = null;
-        
+
         try
         {
-            data = await session.GetChartDataAsync(ticker, startTime, endTime, Period.Daily, ShowOption.History.Name(), cancellationToken).ConfigureAwait(false);
+            data = await session.GetChartDataAsync(ticker, startTime, endTime, Period.Daily, ShowOption.History.Name(), cancellationToken)
+                .ConfigureAwait(false);
         }
-        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == (int)HttpStatusCode.NotFound)
+        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == (int) HttpStatusCode.NotFound)
         {
             return null;
         }
-        
+
         if (data == null)
             return null;
-        
+
         string timeZoneName = data.chart.result[0].meta.exchangeTimezoneName;
         try
         {

@@ -1,7 +1,7 @@
 ﻿using Flurl;
 using Flurl.Http;
 
-namespace YahooFinanceApi.DataRequestExtension;
+namespace YahooFinanceApi.DataRequestExtensions;
 
 public static class YahooSessionExtensions
 {

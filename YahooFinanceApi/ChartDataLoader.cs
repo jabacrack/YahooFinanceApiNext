@@ -25,7 +25,7 @@ namespace YahooFinanceApi;
 
 public static class ChartDataLoader
 {
-    public static async Task<dynamic> GetChartDataAsync(this YahooSession session, string symbol, DateTime startTime, DateTime endTime, Period period, string events, CancellationToken cancellationToken)
+    public static async Task<dynamic> GetChartDataAsync_old(this YahooSession session, string symbol, DateTime startTime, DateTime endTime, Period period, string events, CancellationToken cancellationToken)
     {
         return await session.DoRequest((addAuth, token) => GetResponseStreamAsync(addAuth, symbol, startTime, endTime, period, events, token), cancellationToken).ConfigureAwait(false);
     }

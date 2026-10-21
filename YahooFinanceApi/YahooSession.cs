@@ -19,7 +19,6 @@ public class YahooSession
     private readonly RateLimiter rateLimiter;
     private readonly object crumbLock = new();
     private Task crumbUpdateTask;
-    private SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
 
     /// <summary>
     /// Holds state for Yahoo HTTP calls
@@ -42,21 +41,23 @@ public class YahooSession
     public const string UserAgentValue =
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0";
 
-    /// <summary>
-    /// Gets or sets the auth crumb.
-    /// </summary>
-    /// <value>
-    /// The crumb.
-    /// </value>
-    public string Crumb { get; private set; }
+    private AuthData auth;
 
-    /// <summary>
-    /// Gets or sets the auth cookie.
-    /// </summary>
-    /// <value>
-    /// The cookie.
-    /// </value>
-    public FlurlCookie Cookie { get; private set; }
+    // /// <summary>
+    // /// Gets or sets the auth crumb.
+    // /// </summary>
+    // /// <value>
+    // /// The crumb.
+    // /// </value>
+    // public string Crumb { get; private set; }
+    //
+    // /// <summary>
+    // /// Gets or sets the auth cookie.
+    // /// </summary>
+    // /// <value>
+    // /// The cookie.
+    // /// </value>
+    // public FlurlCookie Cookie { get; private set; }
 
     public int AttemptCount { get; } = 5;
 
@@ -77,8 +78,7 @@ public class YahooSession
 
     private async Task ExecuteGetCrumb()
     {
-        await Task.Yield();
-        (Cookie, Crumb) = await GetAuth();
+        (Cookie, Crumb) = await GetAuth().ConfigureAwait(false);
     }
 
     private async Task<AuthData> GetAuth()
@@ -96,41 +96,45 @@ public class YahooSession
 
         cookie = response.Cookies.FirstOrDefault(c => c.Name == "A3");
 
-        if (Cookie == null)
+        if (cookie == null)
         {
             throw new Exception("Failed to obtain Yahoo auth cookie.");
         }
-        else
-        {
-            crumb = await "https://query1.finance.yahoo.com/v1/test/getcrumb"
-                .WithCookie(Cookie.Name, Cookie.Value)
-                .WithHeader(UserAgentKey, UserAgentValue)
-                .GetAsync()
-                .ReceiveString()
-                .ConfigureAwait(false);
 
-            if (string.IsNullOrEmpty(Crumb))
-            {
-                throw new Exception("Failed to retrieve Yahoo crumb.");
-            }
+        crumb = await "https://query1.finance.yahoo.com/v1/test/getcrumb"
+            .WithCookie(cookie.Name, cookie.Value)
+            .WithHeader(UserAgentKey, UserAgentValue)
+            .GetAsync()
+            .ReceiveString()
+            .ConfigureAwait(false);
+
+        if (string.IsNullOrEmpty(crumb))
+        {
+            throw new Exception("Failed to retrieve Yahoo crumb.");
         }
 
         return new AuthData(cookie, crumb);
     }
 
-    public IFlurlRequest AddAuth(Url url)
+    // public IFlurlRequest AddAuth(Url url)
+    // {
+    //     return url.SetQueryParam("crumb", Crumb)
+    //         .WithCookies(Cookie)
+    //         .WithHeader(UserAgentKey, UserAgentValue);
+    // }
+
+    public async Task SleepBetweenRequests(CancellationToken cancellationToken)
     {
-        return url.SetQueryParam("crumb", Crumb)
-            .WithCookies(Cookie)
-            .WithHeader(UserAgentKey, UserAgentValue);
+        if (rateLimiter.Delay.TotalMilliseconds > 100)
+            await Task.Delay(rateLimiter.Delay, cancellationToken).ConfigureAwait(false);
     }
-    
-    public async Task<T> DoRequest<T>(RequestDelegate<T> request, CancellationToken cancellationToken)
+
+    public async Task<T> DoRequest<T>(Func<CancellationToken, Task<T>> request, CancellationToken cancellationToken)
     {
         var currentAttempt = AttemptCount;
 
         if (Crumb == null)
-            await UpdateCrumb();
+            await UpdateCrumb().ConfigureAwait(false);
 
         while (true)
         {
@@ -138,31 +142,97 @@ public class YahooSession
 
             try
             {
-                await rateLimiter.ExecuteAsync(request(
-                    url => url.SetQueryParam("crumb", Crumb).WithCookie(Cookie.Name, Cookie.Value).WithHeader(UserAgentKey, UserAgentValue),
-                    cancellationToken), cancellationToken);
-                await ;
+                return await rateLimiter.ExecuteAsync(request, cancellationToken).ConfigureAwait(false);
             }
             catch (FlurlHttpException e) when (e.Call.Response?.StatusCode == (int) HttpStatusCode.Unauthorized)
             {
                 if (AttemptCount < 0)
                 {
-                    await Task.Delay(rateLimiter.Delay, cancellationToken);
-                    await UpdateCrumb();
+                    await SleepBetweenRequests(cancellationToken).ConfigureAwait(false);
+                    await UpdateCrumb().ConfigureAwait(false);
                     continue;
                 }
 
                 if (currentAttempt > 0)
                 {
                     currentAttempt--;
-                    await Task.Delay(rateLimiter.Delay, cancellationToken);
-                    await UpdateCrumb();
+                    await SleepBetweenRequests(cancellationToken).ConfigureAwait(false);
+                    await UpdateCrumb().ConfigureAwait(false);
                     continue;
                 }
 
                 throw;
             }
         }
+    }
+    
+    private async Task RefreshAuthCoreAsync()
+    {
+        FlurlCookie cookie;
+        string crumb;
+
+        var response = await "https://fc.yahoo.com"
+            .AllowHttpStatus("404")
+            .AllowHttpStatus("500")
+            .AllowHttpStatus("502")
+            .WithHeader(UserAgentKey, UserAgentValue)
+            .GetAsync()
+            .ConfigureAwait(false);
+
+        cookie = response.Cookies.FirstOrDefault(c => c.Name == "A3");
+
+        if (cookie == null)
+        {
+            throw new Exception("Failed to obtain Yahoo auth cookie.");
+        }
+
+        crumb = await "https://query1.finance.yahoo.com/v1/test/getcrumb"
+            .WithCookie(cookie.Name, cookie.Value)
+            .WithHeader(UserAgentKey, UserAgentValue)
+            .GetAsync()
+            .ReceiveString()
+            .ConfigureAwait(false);
+
+        if (string.IsNullOrEmpty(crumb))
+        {
+            throw new Exception("Failed to retrieve Yahoo crumb.");
+        }
+
+        auth = new AuthData(cookie, crumb);
+    }
+
+    internal async Task<T> GetJsonCoreAsync<T>(Url url, CancellationToken cancellationToken)
+    {
+        if (auth == null)
+            await RefreshAuthCoreAsync().ConfigureAwait(false);
+
+        for (var attempt = 0; attempt < AttemptCount; attempt++)
+        {
+            var currentAuth = auth;
+
+            try
+            {
+                return await rateLimiter.ExecuteAsync(
+                    ctx => url
+                        .SetQueryParam("crumb", currentAuth.Crumb)
+                        .WithCookies(currentAuth.Cookie)
+                        .WithHeader(UserAgentKey, UserAgentValue)
+                        .GetAsync(ctx)
+                        .ReceiveJson<T>(),
+                    cancellationToken).ConfigureAwait(false);
+            }
+            catch (FlurlHttpException ex) when (IsAuthError(ex) && attempt < AttemptCount)
+            {
+                await RefreshAuthCoreAsync().ConfigureAwait(false);
+            }
+        }
+    }
+
+    private static bool IsAuthError(FlurlHttpException ex)
+    {
+        var status = ex.Call.Response?.StatusCode;
+
+        return status == (int) HttpStatusCode.Unauthorized;
     }
 
     record AuthData(FlurlCookie Cookie, string Crumb);

@@ -9,12 +9,12 @@ using Flurl;
 using Flurl.Http;
 using YahooFinanceApi.Utils;
 
-namespace YahooFinanceApi.DataRequestExtension;
+namespace YahooFinanceApi.DataRequestExtensions;
 
-public static partial class DataRequestExtension
+public static class QuoteExtensions
 {
     public static async Task<IReadOnlyDictionary<string, Security>> QueryAsync(this YahooSession session, string[] symbols, string[] fields,
-        CancellationToken token = default)
+        CancellationToken cancellationToken = default)
     {
         if (symbols == null || symbols.Length == 0)
         {
@@ -50,10 +50,7 @@ public static partial class DataRequestExtension
 
         try
         {
-            data = await url
-                .GetAsync(token)
-                .ReceiveJson()
-                .ConfigureAwait(false);
+            data = await session.DoRequest<dynamic>(ctx => url.AddAuth(session).GetAsync(ctx).ReceiveJson(), cancellationToken).ConfigureAwait(false);
         }
         catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == (int) HttpStatusCode.NotFound)
         {
